@@ -56,10 +56,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(500).json({ error: upsertCustomerRes.error.message });
   }
 
-  console.log(`Customer upserted ${upsertCustomerRes.data.id}`);
+  console.log(`Customer upserted ${upsertCustomerRes.data.customer.id}`);
 
   const upsertTimelineEntryRes = await client.upsertCustomTimelineEntry({
-    customerId: upsertCustomerRes.data.id,
+    customerId: upsertCustomerRes.data.customer.id,
     title: body.customeTimelineEntry.title,
     components: body.customeTimelineEntry.components,
     changeCustomerStatusToActive: true,
@@ -75,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   console.log(`Custom timeline entry upserted ${upsertTimelineEntryRes.data.timelineEntry.id}.`);
 
   const createIssueRes = await client.createIssue({
-    customerId: upsertCustomerRes.data.id,
+    customerId: upsertCustomerRes.data.customer.id,
     issueTypeId: body.issue.issueTypeId,
     priorityValue: body.issue.priority,
   });
