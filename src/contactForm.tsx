@@ -68,14 +68,8 @@ export function componentsForDemoRequest(
   ];
 }
 
-function requiredEnvVar(key: string): string {
-  const envVar = process.env[key];
-
-  if (!envVar) {
-    throw new Error(`Environment variable "${key}" not set.`);
-  }
-
-  return envVar;
+function isString(s: unknown): s is string {
+  return typeof s === 'string';
 }
 
 function getLabelTypeIds(formType: FormType): string[] {
@@ -83,14 +77,14 @@ function getLabelTypeIds(formType: FormType): string[] {
     return [];
   }
 
-  const formTypeIdsMap: Record<NonNullable<FormType>, string[]> = {
-    bug: [requiredEnvVar('NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_BUG')],
-    demo: [requiredEnvVar('NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_DEMO')],
-    feature: [requiredEnvVar('NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_FEATURE')],
-    question: [requiredEnvVar('NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_QUESTION')],
-    security: [requiredEnvVar('NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_SECURITY')],
+  const formTypeIdsMap: Record<NonNullable<FormType>, Array<string | undefined>> = {
+    bug: [process.env.NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_BUG],
+    demo: [process.env.NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_DEMO],
+    feature: [process.env.NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_FEATURE],
+    question: [process.env.NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_QUESTION],
+    security: [process.env.NEXT_PUBLIC_PLAIN_LABEL_TYPE_ID_SECURITY],
   };
-  return formTypeIdsMap[formType];
+  return formTypeIdsMap[formType].filter(isString);
 }
 
 function getPriority(formType: FormType, bugIsBlocking: boolean): 0 | 1 | 2 | 3 {
