@@ -1,6 +1,12 @@
 import { inspect } from 'util';
-import { PlainClient, UpsertCustomTimelineEntryInput } from '@team-plain/typescript-sdk';
+import {
+  uiComponent,
+  CreateThreadInput,
+  PlainClient,
+  PlainSDKError,
+} from '@team-plain/typescript-sdk';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import UAParser from 'ua-parser-js';
 
 const apiKey = process.env.PLAIN_API_KEY;
 
@@ -17,32 +23,36 @@ export type ResponseData = {
 };
 
 export type RequestBody = {
-  customer: {
-    name: string;
-    email: string;
-  };
-  customeTimelineEntry: {
-    title: string;
-    components: UpsertCustomTimelineEntryInput['components'];
-  };
-  issue: {
-    issueTypeId: string;
-    priority: number | null;
-  };
+  name: string;
+  email: string;
+  title: string;
+  components: CreateThreadInput['components'];
+  labelTypeIds: string[];
+  priority: 0 | 1 | 2 | 3 | number;
 };
 
+function logError(err: PlainSDKError) {
+  // This ensures the full error is logged
+  console.error(inspect(err, { showHidden: false, depth: null, colors: true }));
+}
+
+
+
+/**
+ * The API handler, this is what accepts our contact form request and submits it to Plain
+ */
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ResponseData>) {
   // In production validation of the request body might be necessary.
-  const body = JSON.parse(req.body) as RequestBody;
+  const reqBody = JSON.parse(req.body) as RequestBody;
 
   const upsertCustomerRes = await client.upsertCustomer({
     identifier: {
-      emailAddress: body.customer.email,
+      emailAddress: reqBody.email,
     },
     onCreate: {
-      fullName: body.customer.name,
+      fullName: reqBody.name,
       email: {
-        email: body.customer.email,
+        email: reqBody.email,
         isVerified: true,
       },
     },
@@ -50,42 +60,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   });
 
   if (upsertCustomerRes.error) {
-    console.error(
-      inspect(upsertCustomerRes.error, { showHidden: false, depth: null, colors: true })
-    );
+    logError(upsertCustomerRes.error);
     return res.status(500).json({ error: upsertCustomerRes.error.message });
   }
 
   console.log(`Customer upserted ${upsertCustomerRes.data.customer.id}`);
 
-  const upsertTimelineEntryRes = await client.upsertCustomTimelineEntry({
-    customerId: upsertCustomerRes.data.customer.id,
-    title: body.customeTimelineEntry.title,
-    components: body.customeTimelineEntry.components,
-    changeCustomerStatusToActive: true,
+  const createThreadRes = await client.createThread({
+    customerIdentifier: {
+      customerId: upsertCustomerRes.data.customer.id,
+    },
+    title: reqBody.title,
+    components: reqBody.components,
+    labelTypeIds: reqBody.labelTypeIds,
+    priority: reqBody.priority,
   });
 
-  if (upsertTimelineEntryRes.error) {
-    console.error(
-      inspect(upsertTimelineEntryRes.error, { showHidden: false, depth: null, colors: true })
-    );
-    return res.status(500).json({ error: upsertTimelineEntryRes.error.message });
+  if (createThreadRes.error) {
+    logError(createThreadRes.error);
+    return res.status(500).json({ error: createThreadRes.error.message });
   }
 
-  console.log(`Custom timeline entry upserted ${upsertTimelineEntryRes.data.timelineEntry.id}.`);
-
-  const createIssueRes = await client.createIssue({
-    customerId: upsertCustomerRes.data.customer.id,
-    issueTypeId: body.issue.issueTypeId,
-    priorityValue: body.issue.priority,
-  });
-
-  if (createIssueRes.error) {
-    console.error(inspect(createIssueRes.error, { showHidden: false, depth: null, colors: true }));
-    return res.status(500).json({ error: createIssueRes.error.message });
-  }
-
-  console.log(`Issue created ${createIssueRes.data.id}`);
+  console.log(`Thread created ${createThreadRes.data.id}`);
 
   res.status(200).json({ error: null });
 }

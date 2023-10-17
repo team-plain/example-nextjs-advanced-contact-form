@@ -1,6 +1,6 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { ContactForm } from '../src/components/contactForm';
+import { ContactForm } from '../src/contactForm';
 import { Layout } from '../src/components/layout';
 
 const Home: NextPage = () => {
