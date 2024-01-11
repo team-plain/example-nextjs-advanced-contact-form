@@ -19,7 +19,7 @@ export function componentsForBug(bugDescription: string): CreateThreadInput['com
 
   return [
     uiComponent.text({ text: bugDescription }),
-    uiComponent.spacer({ spacingSize: 'S' }),
+    uiComponent.spacer({ size: 'S' }),
     uiComponent.text({
       text: `Reported on ${window.location.href} using ${browser.name} (${browser.version})`,
       size: 'S',
@@ -47,7 +47,7 @@ export function componentsForDemoRequest(
 ) {
   return [
     ...(demoMessage
-      ? [uiComponent.text({ text: demoMessage }), uiComponent.spacer({ spacingSize: 'S' })]
+      ? [uiComponent.text({ text: demoMessage }), uiComponent.spacer({ size: 'S' })]
       : []),
     uiComponent.row({
       mainContent: [uiComponent.text({ text: 'Current provider', color: 'MUTED' })],
